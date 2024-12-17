@@ -1,4 +1,4 @@
-name: XCBBuildServiceProxyKit
+name: XcodeBuildServiceKit
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   pull_request: {}
 
 concurrency:
-  group: XCBBuildServiceProxyKit-${{ github.head_ref }}
+  group: XcodeBuildServiceKit-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:

@@ -7,7 +7,7 @@ public struct BuildOperationProgressUpdated {
     public let statusMessage: String
     public let percentComplete: Double
     public let showInLog: Bool
-    
+
     public init(targetName: String?, statusMessage: String, percentComplete: Double, showInLog: Bool) {
         self.targetName = targetName
         self.statusMessage = statusMessage
@@ -27,11 +27,11 @@ extension BuildOperationProgressUpdated: ResponsePayloadConvertible {
 extension BuildOperationProgressUpdated: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 4 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.targetName = try args.parseOptionalString(indexPath: indexPath + IndexPath(index: 0))
-        self.statusMessage = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
-        self.percentComplete = try args.parseDouble(indexPath: indexPath + IndexPath(index: 2))
-        self.showInLog = try args.parseBool(indexPath: indexPath + IndexPath(index: 3))
+
+        targetName = try args.parseOptionalString(indexPath: indexPath + IndexPath(index: 0))
+        statusMessage = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
+        percentComplete = try args.parseDouble(indexPath: indexPath + IndexPath(index: 2))
+        showInLog = try args.parseBool(indexPath: indexPath + IndexPath(index: 3))
     }
 }
 
@@ -39,7 +39,7 @@ extension BuildOperationProgressUpdated: DecodableRPCPayload {
 
 extension BuildOperationProgressUpdated: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             targetName.flatMap { .string($0) } ?? .nil,
             .string(statusMessage),
             .double(percentComplete),

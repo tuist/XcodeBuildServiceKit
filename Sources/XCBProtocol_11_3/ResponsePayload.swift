@@ -7,7 +7,7 @@ public enum ResponsePayload {
     case bool(BoolResponse)
     case string(StringResponse)
     case error(ErrorResponse)
-    
+
     case buildCreated(BuildCreated)
     case buildOperationProgressUpdated(BuildOperationProgressUpdated)
     case buildOperationPreparationCompleted(BuildOperationPreparationCompleted)
@@ -15,23 +15,23 @@ public enum ResponsePayload {
     case buildOperationReportPathMap(BuildOperationReportPathMap)
     case buildOperationDiagnostic(BuildOperationDiagnosticEmitted)
     case buildOperationEnded(BuildOperationEnded)
-    
+
     case planningOperationWillStart(PlanningOperationWillStart)
     case planningOperationDidFinish(PlanningOperationDidFinish)
-    
+
     case buildOperationTargetUpToDate(BuildOperationTargetUpToDate)
     case buildOperationTargetStarted(BuildOperationTargetStarted)
     case buildOperationTargetEnded(BuildOperationTargetEnded)
-    
+
     case buildOperationTaskUpToDate(BuildOperationTaskUpToDate)
     case buildOperationTaskStarted(BuildOperationTaskStarted)
     case buildOperationConsoleOutput(BuildOperationConsoleOutputEmitted)
     case buildOperationTaskEnded(BuildOperationTaskEnded)
-    
+
     case indexingInfo(IndexingInfoResponse)
-    
+
     case previewInfo(PreviewInfoResponse)
-    
+
     case unknownResponse(UnknownResponse)
 }
 
@@ -43,17 +43,17 @@ public struct UnknownResponse {
 
 extension ResponsePayload: XCBProtocol.ResponsePayload {
     public static func unknownResponse(values: [MessagePackValue]) -> Self {
-        return .unknownResponse(.init(values: values))
+        .unknownResponse(.init(values: values))
     }
-    
+
     public static func errorResponse(_ message: String) -> Self {
-        return .error(.init(message))
+        .error(.init(message))
     }
-    
+
     public init(values: [MessagePackValue], indexPath: IndexPath) throws {
         let name = try values.parseString(indexPath: indexPath + IndexPath(index: 0))
         let bodyIndexPath = indexPath + IndexPath(index: 1)
-        
+
         switch name {
         case "PING": self = .ping(try values.parseObject(indexPath: bodyIndexPath))
         case "BOOL": self = .bool(try values.parseObject(indexPath: bodyIndexPath))
@@ -61,9 +61,11 @@ extension ResponsePayload: XCBProtocol.ResponsePayload {
         case "ERROR": self = .error(try values.parseObject(indexPath: bodyIndexPath))
         case "BUILD_CREATED": self = .buildCreated(try values.parseObject(indexPath: bodyIndexPath))
         case "BUILD_PROGRESS_UPDATED": self = .buildOperationProgressUpdated(try values.parseObject(indexPath: bodyIndexPath))
-        case "BUILD_PREPARATION_COMPLETED": self = .buildOperationPreparationCompleted(try values.parseObject(indexPath: bodyIndexPath))
+        case "BUILD_PREPARATION_COMPLETED": self = .buildOperationPreparationCompleted(try values
+                .parseObject(indexPath: bodyIndexPath))
         case "BUILD_OPERATION_STARTED": self = .buildOperationStarted(try values.parseObject(indexPath: bodyIndexPath))
-        case "BUILD_OPERATION_REPORT_PATH_MAP": self = .buildOperationReportPathMap(try values.parseObject(indexPath: bodyIndexPath))
+        case "BUILD_OPERATION_REPORT_PATH_MAP": self = .buildOperationReportPathMap(try values
+                .parseObject(indexPath: bodyIndexPath))
         case "BUILD_DIAGNOSTIC_EMITTED": self = .buildOperationDiagnostic(try values.parseObject(indexPath: bodyIndexPath))
         case "BUILD_OPERATION_ENDED": self = .buildOperationEnded(try values.parseObject(indexPath: bodyIndexPath))
         case "PLANNING_OPERATION_WILL_START": self = .planningOperationWillStart(try values.parseObject(indexPath: bodyIndexPath))
@@ -77,11 +79,10 @@ extension ResponsePayload: XCBProtocol.ResponsePayload {
         case "BUILD_TASK_ENDED": self = .buildOperationTaskEnded(try values.parseObject(indexPath: bodyIndexPath))
         case "INDEXING_INFO_RECEIVED": self = .indexingInfo(try values.parseObject(indexPath: bodyIndexPath))
         case "PREVIEW_INFO_RECEIVED": self = .previewInfo(try values.parseObject(indexPath: bodyIndexPath))
-            
         default: self = .unknownResponse(.init(values: values))
         }
     }
-    
+
     private var name: String {
         switch self {
         case .ping: return "PING"
@@ -106,11 +107,10 @@ extension ResponsePayload: XCBProtocol.ResponsePayload {
         case .buildOperationTaskEnded: return "BUILD_TASK_ENDED"
         case .indexingInfo: return "INDEXING_INFO_RECEIVED"
         case .previewInfo: return "PREVIEW_INFO_RECEIVED"
-            
         case .unknownResponse: preconditionFailure("Tried to get name of UnknownResponse")
         }
     }
-    
+
     private var message: CustomEncodableRPCPayload {
         switch self {
         case let .ping(message): return message
@@ -135,16 +135,15 @@ extension ResponsePayload: XCBProtocol.ResponsePayload {
         case let .buildOperationTaskEnded(message): return message
         case let .indexingInfo(message): return message
         case let .previewInfo(message): return message
-            
         case .unknownResponse: preconditionFailure("Tried to get message of UnknownResponse")
         }
     }
-    
+
     public func encode() -> [MessagePackValue] {
         if case let .unknownResponse(message) = self {
             return message.values
         }
-        
+
         return [.string(name), message.encode()]
     }
 }

@@ -5,11 +5,11 @@ import os
 
 /// An RPC request sent from Xcode.
 public struct RPCRequest<Payload: RequestPayload>: CustomStringConvertible {
-    public var description: String { "Channel: \(channel) - Payload: \(payload) "}
-    
+    public var description: String { "Channel: \(channel) - Payload: \(payload) " }
+
     public let channel: UInt64
     public let payload: Payload
-    
+
     /// Currently, instead of re-encoding requests when sending them to XCBBuildService, we send the original packet along.
     let forwardPacket: RPCPacket
 }
@@ -20,14 +20,14 @@ public final class RPCRequestDecoder<Payload: RequestPayload>: ChannelInboundHan
     public typealias InboundIn = RPCPacket
     public typealias InboundOut = RPCRequest<Payload>
     public typealias OutboundOut = RPCPacket
-    
+
     public init() {}
-    
+
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
         let request = RPCRequest<Payload>(unwrapInboundIn(data))
-        
+
         os_log(.debug, "RPCRequest decoded: \(request)")
-        
+
         context.fireChannelRead(wrapInboundOut(request))
     }
 }
@@ -40,10 +40,10 @@ extension RPCRequest {
         } catch {
             let errorStr = "\(error)"
             os_log(.error, "Failed parsing RequestPayload received from Xcode: \(errorStr)\nValues: \(packet.body)")
-            
+
             payload = .unknownRequest(values: packet.body)
         }
-        
+
         self.init(
             channel: packet.channel,
             payload: payload,
@@ -53,7 +53,7 @@ extension RPCRequest {
 }
 
 extension RPCPacket {
-    public init<Payload: RequestPayload>(_ request: RPCRequest<Payload>) {
+    public init(_ request: RPCRequest<some RequestPayload>) {
         self = request.forwardPacket
     }
 }

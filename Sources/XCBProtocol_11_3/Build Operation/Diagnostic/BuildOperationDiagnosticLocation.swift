@@ -13,22 +13,22 @@ public enum BuildOperationDiagnosticLocation {
 extension BuildOperationDiagnosticLocation: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 2 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
+
         let rawValue = try args.parseInt64(indexPath: indexPath + IndexPath(index: 0))
-        
+
         switch rawValue {
         case 0:
             self = .alternativeMessage(try args.parseString(indexPath: indexPath + IndexPath(index: 1)))
-            
+
         case 1:
             let locationArgs = try args.parseArray(indexPath: indexPath + IndexPath(index: 1))
-            
+
             self = .locationContext(
                 file: try locationArgs.parseString(indexPath: indexPath + IndexPath(indexes: [1, 0])),
                 line: try locationArgs.parseInt64(indexPath: indexPath + IndexPath(indexes: [1, 1])),
                 column: try locationArgs.parseInt64(indexPath: indexPath + IndexPath(indexes: [1, 2]))
             )
-            
+
         default:
             throw RPCPayloadDecodingError.incorrectValueType(indexPath: indexPath + IndexPath(index: 0), expectedType: Self.self)
         }
@@ -45,7 +45,7 @@ extension BuildOperationDiagnosticLocation: EncodableRPCPayload {
                 .int64(0),
                 .string(message),
             ]
-            
+
         case let .locationContext(file, line, column):
             return [
                 .int64(1),

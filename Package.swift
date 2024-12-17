@@ -20,7 +20,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log", .upToNextMajor(from: "1.4.2")),
-        .package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.40.0"))
+        .package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.40.0")),
     ],
     targets: [
         .target(
@@ -28,50 +28,55 @@ let package = Package(
             dependencies: [
                 "MessagePack",
                 "XCBProtocol",
-                .product(name: "Logging", package: "swift-log")
+                .product(name: "Logging", package: "swift-log"),
             ]
         ),
         .target(
             name: "XCBProtocol",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(
             name: "XCBProtocol_11_3",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                "XCBProtocol",
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(
             name: "XCBProtocol_11_4",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                "XCBProtocol",
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(
             name: "XCBProtocol_12_0",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                "XCBProtocol",
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(
             name: "XCBProtocol_12_5",
             dependencies: [
                 .product(name: "NIO", package: "swift-nio"),
-                "XCBProtocol"
+                "XCBProtocol",
             ]
         ),
         .target(
             name: "XCBProtocol_13_0",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                "XCBProtocol",
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(
             name: "XCBProtocol_13_3",
             dependencies: [
-                .product(name: "NIO", package: "swift-nio")
+                "XCBProtocol",
+                .product(name: "NIO", package: "swift-nio"),
             ]
         ),
         .target(

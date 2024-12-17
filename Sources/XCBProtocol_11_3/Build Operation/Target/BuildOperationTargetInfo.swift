@@ -9,7 +9,7 @@ public struct BuildOperationTargetInfo {
     public let configurationName: String // e.g. "Debug"
     public let configurationIsDefault: Bool
     public let sdkRoot: String // e.g. "/Applications/Xcode-11.3.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator13.2.sdk"
-    
+
     public init(
         name: String,
         typeName: String,
@@ -32,13 +32,13 @@ public struct BuildOperationTargetInfo {
 extension BuildOperationTargetInfo: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 6 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.name = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
-        self.typeName = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
-        self.projectInfo = try args.parseObject(indexPath: indexPath + IndexPath(index: 2))
-        self.configurationName = try args.parseString(indexPath: indexPath + IndexPath(index: 3))
-        self.configurationIsDefault = try args.parseBool(indexPath: indexPath + IndexPath(index: 4))
-        self.sdkRoot = try args.parseString(indexPath: indexPath + IndexPath(index: 5))
+
+        name = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
+        typeName = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
+        projectInfo = try args.parseObject(indexPath: indexPath + IndexPath(index: 2))
+        configurationName = try args.parseString(indexPath: indexPath + IndexPath(index: 3))
+        configurationIsDefault = try args.parseBool(indexPath: indexPath + IndexPath(index: 4))
+        sdkRoot = try args.parseString(indexPath: indexPath + IndexPath(index: 5))
     }
 }
 
@@ -46,7 +46,7 @@ extension BuildOperationTargetInfo: DecodableRPCPayload {
 
 extension BuildOperationTargetInfo: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             .string(name),
             .string(typeName),
             .array(projectInfo.encode()),

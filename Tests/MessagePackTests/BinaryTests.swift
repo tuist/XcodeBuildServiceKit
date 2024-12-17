@@ -5,7 +5,7 @@ import XCTest
 
 class BinaryTests: XCTestCase {
     let payload = Data([0x00, 0x01, 0x02, 0x03, 0x04])
-    let packed = Data([0xc4, 0x05, 0x00, 0x01, 0x02, 0x03, 0x04])
+    let packed = Data([0xC4, 0x05, 0x00, 0x01, 0x02, 0x03, 0x04])
 
     func testPack() {
         XCTAssertEqual(MessagePackValue.pack(.binary(payload)), packed)
@@ -19,13 +19,13 @@ class BinaryTests: XCTestCase {
 
     func testPackBinEmpty() {
         let value = Data()
-        let expectedPacked = Data([0xc4, 0x00]) + value
+        let expectedPacked = Data([0xC4, 0x00]) + value
         XCTAssertEqual(MessagePackValue.pack(.binary(value)), expectedPacked)
     }
 
     func testUnpackBinEmpty() throws {
         let data = Data()
-        let packed = Data([0xc4, 0x00]) + data
+        let packed = Data([0xC4, 0x00]) + data
 
         let unpacked = try MessagePackValue.unpack(packed)
         XCTAssertEqual(unpacked.value, MessagePackValue.binary(data))
@@ -33,14 +33,14 @@ class BinaryTests: XCTestCase {
     }
 
     func testPackBin16() {
-        let value = Data(count: 0xff)
-        let expectedPacked = Data([0xc4, 0xff]) + value
+        let value = Data(count: 0xFF)
+        let expectedPacked = Data([0xC4, 0xFF]) + value
         XCTAssertEqual(MessagePackValue.pack(.binary(value)), expectedPacked)
     }
 
     func testUnpackBin16() throws {
-        let data = Data([0xc4, 0xff]) + Data(count: 0xff)
-        let value = Data(count: 0xff)
+        let data = Data([0xC4, 0xFF]) + Data(count: 0xFF)
+        let value = Data(count: 0xFF)
 
         let unpacked = try MessagePackValue.unpack(data)
         XCTAssertEqual(unpacked.value, .binary(value))
@@ -49,12 +49,12 @@ class BinaryTests: XCTestCase {
 
     func testPackBin32() {
         let value = Data(count: 0x100)
-        let expectedPacked = Data([0xc5, 0x01, 0x00]) + value
+        let expectedPacked = Data([0xC5, 0x01, 0x00]) + value
         XCTAssertEqual(MessagePackValue.pack(.binary(value)), expectedPacked)
     }
 
     func testUnpackBin32() throws {
-        let data = Data([0xc5, 0x01, 0x00]) + Data(count: 0x100)
+        let data = Data([0xC5, 0x01, 0x00]) + Data(count: 0x100)
         let value = Data(count: 0x100)
 
         let unpacked = try MessagePackValue.unpack(data)
@@ -63,14 +63,14 @@ class BinaryTests: XCTestCase {
     }
 
     func testPackBin64() {
-        let value = Data(count: 0x1_0000)
-        let expectedPacked = Data([0xc6, 0x00, 0x01, 0x00, 0x00]) + value
+        let value = Data(count: 0x10000)
+        let expectedPacked = Data([0xC6, 0x00, 0x01, 0x00, 0x00]) + value
         XCTAssertEqual(MessagePackValue.pack(.binary(value)), expectedPacked)
     }
 
     func testUnpackBin64() throws {
-        let data = Data([0xc6, 0x00, 0x01, 0x00, 0x00]) + Data(count: 0x1_0000)
-        let value = Data(count: 0x1_0000)
+        let data = Data([0xC6, 0x00, 0x01, 0x00, 0x00]) + Data(count: 0x10000)
+        let value = Data(count: 0x10000)
 
         let unpacked = try MessagePackValue.unpack(data)
         XCTAssertEqual(unpacked.value, .binary(value))
@@ -80,12 +80,12 @@ class BinaryTests: XCTestCase {
     func testUnpackInsufficientData() {
         let dataArray: [Data] = [
             // only type byte
-            Data([0xc4]), Data([0xc5]), Data([0xc6]),
-            
+            Data([0xC4]), Data([0xC5]), Data([0xC6]),
+
             // type byte with no data
-            Data([0xc4, 0x01]),
-            Data([0xc5, 0x00, 0x01]),
-            Data([0xc6, 0x00, 0x00, 0x00, 0x01]),
+            Data([0xC4, 0x01]),
+            Data([0xC5, 0x00, 0x01]),
+            Data([0xC6, 0x00, 0x00, 0x00, 0x01]),
         ]
 
         for data in dataArray {

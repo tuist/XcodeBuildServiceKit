@@ -7,8 +7,13 @@ public struct BuildOperationTaskEnded {
     public let status: BuildOperationStatus
     public let skippedErrorsFromSerializedDiagnostics: Bool // Might be named "signalled"
     public let metrics: BuildOperationTaskMetrics?
-    
-    public init(taskID: Int64, status: BuildOperationStatus, skippedErrorsFromSerializedDiagnostics: Bool, metrics: BuildOperationTaskMetrics?) {
+
+    public init(
+        taskID: Int64,
+        status: BuildOperationStatus,
+        skippedErrorsFromSerializedDiagnostics: Bool,
+        metrics: BuildOperationTaskMetrics?
+    ) {
         self.taskID = taskID
         self.status = status
         self.skippedErrorsFromSerializedDiagnostics = skippedErrorsFromSerializedDiagnostics
@@ -27,11 +32,11 @@ extension BuildOperationTaskEnded: ResponsePayloadConvertible {
 extension BuildOperationTaskEnded: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 4 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.taskID = try args.parseInt64(indexPath: indexPath + IndexPath(index: 0))
-        self.status = try args.parseObject(indexPath: indexPath + IndexPath(index: 1))
-        self.skippedErrorsFromSerializedDiagnostics = try args.parseBool(indexPath: indexPath + IndexPath(index: 2))
-        self.metrics = try args.parseOptionalObject(indexPath: indexPath + IndexPath(index: 3))
+
+        taskID = try args.parseInt64(indexPath: indexPath + IndexPath(index: 0))
+        status = try args.parseObject(indexPath: indexPath + IndexPath(index: 1))
+        skippedErrorsFromSerializedDiagnostics = try args.parseBool(indexPath: indexPath + IndexPath(index: 2))
+        metrics = try args.parseOptionalObject(indexPath: indexPath + IndexPath(index: 3))
     }
 }
 
@@ -39,7 +44,7 @@ extension BuildOperationTaskEnded: DecodableRPCPayload {
 
 extension BuildOperationTaskEnded: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             .int64(taskID),
             .int64(status.rawValue),
             .bool(skippedErrorsFromSerializedDiagnostics),

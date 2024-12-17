@@ -25,37 +25,37 @@ extension MessagePackValue: CustomStringConvertible {
         switch self {
         case .nil:
             return "nil"
-        case .bool(let value):
+        case let .bool(value):
             return "bool(\(value))"
-        case .int8(let value):
+        case let .int8(value):
             return "int8(\(value))"
-        case .int16(let value):
+        case let .int16(value):
             return "int16(\(value))"
-        case .int32(let value):
+        case let .int32(value):
             return "int32(\(value))"
-        case .int64(let value):
+        case let .int64(value):
             return "int64(\(value))"
-        case .uint8(let value):
+        case let .uint8(value):
             return "uint8(\(value))"
-        case .uint16(let value):
+        case let .uint16(value):
             return "uint16(\(value))"
-        case .uint32(let value):
+        case let .uint32(value):
             return "uint32(\(value))"
-        case .uint64(let value):
+        case let .uint64(value):
             return "uint64(\(value))"
-        case .float(let value):
+        case let .float(value):
             return "float(\(value))"
-        case .double(let value):
+        case let .double(value):
             return "double(\(value))"
-        case .string(let string):
+        case let .string(string):
             return "string(\(string))"
-        case .binary(let data):
+        case let .binary(data):
             return "data(\(data))"
-        case .array(let array):
+        case let .array(array):
             return "array(\(array.description))"
-        case .map(let dict):
+        case let .map(dict):
             return "map(\(dict.description))"
-        case .extended(let type, let data):
+        case let .extended(type, data):
             return "extended(\(type), \(data))"
         }
     }

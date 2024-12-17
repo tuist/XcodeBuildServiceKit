@@ -4,7 +4,7 @@ import XCBProtocol
 
 public struct StringResponse {
     public let value: String
-    
+
     public init(_ value: String) {
         self.value = value
     }
@@ -21,8 +21,8 @@ extension StringResponse: ResponsePayloadConvertible {
 extension StringResponse: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 1 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.value = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
+
+        value = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
     }
 }
 
@@ -30,6 +30,6 @@ extension StringResponse: DecodableRPCPayload {
 
 extension StringResponse: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [.string(value)]
+        [.string(value)]
     }
 }

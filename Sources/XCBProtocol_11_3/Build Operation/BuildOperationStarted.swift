@@ -4,7 +4,7 @@ import XCBProtocol
 
 public struct BuildOperationStarted {
     public let buildNumber: Int64
-    
+
     public init(buildNumber: Int64) {
         self.buildNumber = buildNumber
     }
@@ -21,8 +21,8 @@ extension BuildOperationStarted: ResponsePayloadConvertible {
 extension BuildOperationStarted: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 1 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.buildNumber = try args.parseInt64(indexPath: indexPath + IndexPath(index: 0))
+
+        buildNumber = try args.parseInt64(indexPath: indexPath + IndexPath(index: 0))
     }
 }
 
@@ -30,6 +30,6 @@ extension BuildOperationStarted: DecodableRPCPayload {
 
 extension BuildOperationStarted: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [.int64(buildNumber)]
+        [.int64(buildNumber)]
     }
 }

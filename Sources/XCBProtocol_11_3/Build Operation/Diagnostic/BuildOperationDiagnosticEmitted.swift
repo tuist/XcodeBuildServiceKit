@@ -11,7 +11,7 @@ public struct BuildOperationDiagnosticEmitted {
     public let appendToOutputStream: Bool // If `true`, it's attached to the output instead of showing as a new entry
     public let unknown2: MessagePackValue // ???
     public let unknown3: MessagePackValue // Might be `childDiagnostics`
-    
+
     public init(
         kind: BuildOperationDiagnosticKind,
         location: BuildOperationDiagnosticLocation,
@@ -24,10 +24,10 @@ public struct BuildOperationDiagnosticEmitted {
         self.location = location
         self.message = message
         self.component = component
-        self.unknown1 = unknown
+        unknown1 = unknown
         self.appendToOutputStream = appendToOutputStream
-        self.unknown2 = .nil
-        self.unknown3 = .array([])
+        unknown2 = .nil
+        unknown3 = .array([])
     }
 }
 
@@ -42,15 +42,15 @@ extension BuildOperationDiagnosticEmitted: ResponsePayloadConvertible {
 extension BuildOperationDiagnosticEmitted: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 8 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.kind = try args.parseObject(indexPath: indexPath + IndexPath(index: 0))
-        self.location = try args.parseObject(indexPath: indexPath + IndexPath(index: 1))
-        self.message = try args.parseString(indexPath: indexPath + IndexPath(index: 2))
-        self.component = try args.parseObject(indexPath: indexPath + IndexPath(index: 3))
-        self.unknown1 = try args.parseString(indexPath: indexPath + IndexPath(index: 4))
-        self.appendToOutputStream = try args.parseBool(indexPath: indexPath + IndexPath(index: 5))
-        self.unknown2 = try args.parseUnknown(indexPath: indexPath + IndexPath(index: 6))
-        self.unknown3 = try args.parseUnknown(indexPath: indexPath + IndexPath(index: 7))
+
+        kind = try args.parseObject(indexPath: indexPath + IndexPath(index: 0))
+        location = try args.parseObject(indexPath: indexPath + IndexPath(index: 1))
+        message = try args.parseString(indexPath: indexPath + IndexPath(index: 2))
+        component = try args.parseObject(indexPath: indexPath + IndexPath(index: 3))
+        unknown1 = try args.parseString(indexPath: indexPath + IndexPath(index: 4))
+        appendToOutputStream = try args.parseBool(indexPath: indexPath + IndexPath(index: 5))
+        unknown2 = try args.parseUnknown(indexPath: indexPath + IndexPath(index: 6))
+        unknown3 = try args.parseUnknown(indexPath: indexPath + IndexPath(index: 7))
     }
 }
 
@@ -58,7 +58,7 @@ extension BuildOperationDiagnosticEmitted: DecodableRPCPayload {
 
 extension BuildOperationDiagnosticEmitted: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             .int64(kind.rawValue),
             .array(location.encode()),
             .string(message),

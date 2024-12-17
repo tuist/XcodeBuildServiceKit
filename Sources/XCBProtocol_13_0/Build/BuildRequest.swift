@@ -17,4 +17,3 @@ public struct BuildRequest: Decodable {
     public let shouldCollectMetrics: Bool
     public let jsonRepresentation: String?
 }
-

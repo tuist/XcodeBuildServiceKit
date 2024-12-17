@@ -32,6 +32,6 @@ extension BuildPlatform: CustomStringConvertible {
 
 extension BuildPlatform: CustomEncodableRPCPayload {
     public func encode() -> MessagePackValue {
-        return .string(rawValue)
+        .string(rawValue)
     }
 }

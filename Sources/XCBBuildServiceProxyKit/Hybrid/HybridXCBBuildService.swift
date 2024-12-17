@@ -7,17 +7,20 @@ public final class HybridXCBBuildService<RequestHandler: HybridXCBBuildServiceRe
     private let name: String
     private let group: EventLoopGroup
     private let bootstrap: NIOPipeBootstrap
-    
+
     // TODO: Move NIO specific stuff into class
     public init(name: String, group: EventLoopGroup, requestHandler: RequestHandler) throws {
         self.name = name
         self.group = group
-        
-        let xcbBuildServiceBootstrap = XCBBuildServiceBootstrap<RequestHandler.RequestPayload, RequestHandler.ResponsePayload>(group: group)
-        
+
+        let xcbBuildServiceBootstrap = XCBBuildServiceBootstrap<
+            RequestHandler.RequestPayload,
+            RequestHandler.ResponsePayload
+        >(group: group)
+
         let xcbBuildServiceFuture = xcbBuildServiceBootstrap.create()
-        
-        self.bootstrap = NIOPipeBootstrap(group: group)
+
+        bootstrap = NIOPipeBootstrap(group: group)
             .channelInitializer { channel in
                 xcbBuildServiceFuture.flatMap { xcbBuildService in
                     let framingHandler = RPCPacketCodec(label: "HybridXCBBuildService(\(name))")
@@ -47,15 +50,15 @@ public final class HybridXCBBuildService<RequestHandler: HybridXCBBuildServiceRe
                 }
             }
     }
-    
+
     public func start() throws -> Channel {
         let channel = try bootstrap.withPipes(inputDescriptor: STDIN_FILENO, outputDescriptor: STDOUT_FILENO).wait()
-        
+
         os_log(.info, "\(self.name) started and listening on STDIN")
-        
+
         return channel
     }
-    
+
     public func stop() {
         do {
             try group.syncShutdownGracefully()

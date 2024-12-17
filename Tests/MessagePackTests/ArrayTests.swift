@@ -26,12 +26,12 @@ class ArrayTests: XCTestCase {
 
     func testPackArray16() {
         let value = [MessagePackValue](repeating: nil, count: 16)
-        let packed = Data([0xdc, 0x00, 0x10] + [UInt8](repeating: 0xc0, count: 16))
+        let packed = Data([0xDC, 0x00, 0x10] + [UInt8](repeating: 0xC0, count: 16))
         XCTAssertEqual(MessagePackValue.pack(.array(value)), packed)
     }
 
     func testUnpackArray16() {
-        let packed = Data([0xdc, 0x00, 0x10] + [UInt8](repeating: 0xc0, count: 16))
+        let packed = Data([0xDC, 0x00, 0x10] + [UInt8](repeating: 0xC0, count: 16))
         let value = [MessagePackValue](repeating: nil, count: 16)
 
         let unpacked = try? MessagePackValue.unpack(packed)

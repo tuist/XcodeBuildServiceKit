@@ -14,7 +14,7 @@ public enum BuildSetting {
 extension BuildSetting: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
+
         if let array = try? container.decode([String].self) {
             self = .array(array)
         } else {
@@ -43,7 +43,7 @@ extension ProjectPIF {
         // "/Path/To/Project.xcodeproj" -> "Project"
         projectName ?? ((path as NSString).lastPathComponent as NSString).deletingPathExtension
     }
-    
+
     public var isPackage: Bool { projectIsPackage?.lowercased() == "true" }
 }
 

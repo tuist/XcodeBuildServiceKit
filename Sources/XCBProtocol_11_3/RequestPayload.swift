@@ -7,15 +7,15 @@ public enum RequestPayload {
     case transferSessionPIFRequest(TransferSessionPIFRequest)
     case setSessionSystemInfo(SetSessionSystemInfoRequest)
     case setSessionUserInfo(SetSessionUserInfoRequest)
-    
+
     case createBuildRequest(CreateBuildRequest)
     case buildStartRequest(BuildStartRequest)
     case buildCancelRequest(BuildCancelRequest)
-    
+
     case indexingInfoRequest(IndexingInfoRequest)
-    
+
     case previewInfoRequest(PreviewInfoRequest)
-    
+
     case unknownRequest(UnknownRequest)
 }
 
@@ -27,13 +27,13 @@ public struct UnknownRequest {
 
 extension RequestPayload: XCBProtocol.RequestPayload {
     public static func unknownRequest(values: [MessagePackValue]) -> Self {
-        return .unknownRequest(.init(values: values))
+        .unknownRequest(.init(values: values))
     }
-    
+
     public init(values: [MessagePackValue], indexPath: IndexPath) throws {
         let name = try values.parseString(indexPath: indexPath + IndexPath(index: 0))
         let bodyIndexPath = indexPath + IndexPath(index: 1)
-        
+
         switch name {
         case "CREATE_SESSION": self = .createSession(try values.parseObject(indexPath: bodyIndexPath))
         case "TRANSFER_SESSION_PIF_REQUEST": self = .transferSessionPIFRequest(try values.parseObject(indexPath: bodyIndexPath))
@@ -44,14 +44,13 @@ extension RequestPayload: XCBProtocol.RequestPayload {
         case "BUILD_CANCEL": self = .buildCancelRequest(try values.parseObject(indexPath: bodyIndexPath))
         case "INDEXING_INFO_REQUESTED": self = .indexingInfoRequest(try values.parseObject(indexPath: bodyIndexPath))
         case "PREVIEW_INFO_REQUESTED": self = .previewInfoRequest(try values.parseObject(indexPath: bodyIndexPath))
-            
         default: self = .unknownRequest(.init(values: values))
         }
     }
-    
+
     public var createSessionXcodePath: String? {
         switch self {
-        case .createSession(let message): return message.appPath
+        case let .createSession(message): return message.appPath
         default: return nil
         }
     }

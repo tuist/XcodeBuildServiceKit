@@ -10,7 +10,7 @@ public struct SDKVariant {
 
 extension SDKVariant: CustomDecodableRPCPayload {
     public init(values: [MessagePackValue], indexPath: IndexPath) throws {
-        self.rawValue = try values.parseString(indexPath: indexPath)
+        rawValue = try values.parseString(indexPath: indexPath)
     }
 }
 
@@ -22,6 +22,6 @@ extension SDKVariant: CustomStringConvertible {
 
 extension SDKVariant: CustomEncodableRPCPayload {
     public func encode() -> MessagePackValue {
-        return .string(rawValue)
+        .string(rawValue)
     }
 }

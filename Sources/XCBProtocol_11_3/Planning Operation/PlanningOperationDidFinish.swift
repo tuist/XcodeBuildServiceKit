@@ -5,7 +5,7 @@ import XCBProtocol
 public struct PlanningOperationDidFinish {
     public let sessionHandle: String
     public let guid: String
-    
+
     public init(sessionHandle: String, guid: String) {
         self.sessionHandle = sessionHandle
         self.guid = guid
@@ -23,9 +23,9 @@ extension PlanningOperationDidFinish: ResponsePayloadConvertible {
 extension PlanningOperationDidFinish: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 2 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.sessionHandle = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
-        self.guid = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
+
+        sessionHandle = try args.parseString(indexPath: indexPath + IndexPath(index: 0))
+        guid = try args.parseString(indexPath: indexPath + IndexPath(index: 1))
     }
 }
 
@@ -33,6 +33,6 @@ extension PlanningOperationDidFinish: DecodableRPCPayload {
 
 extension PlanningOperationDidFinish: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [.string(sessionHandle), .string(guid)]
+        [.string(sessionHandle), .string(guid)]
     }
 }

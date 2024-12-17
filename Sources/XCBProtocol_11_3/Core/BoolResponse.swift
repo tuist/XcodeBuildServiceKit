@@ -4,7 +4,7 @@ import XCBProtocol
 
 public struct BoolResponse {
     public let value: Bool
-    
+
     public init(_ value: Bool) {
         self.value = value
     }
@@ -21,8 +21,8 @@ extension BoolResponse: ResponsePayloadConvertible {
 extension BoolResponse: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 1 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.value = try args.parseBool(indexPath: indexPath + IndexPath(index: 0))
+
+        value = try args.parseBool(indexPath: indexPath + IndexPath(index: 0))
     }
 }
 
@@ -30,6 +30,6 @@ extension BoolResponse: DecodableRPCPayload {
 
 extension BoolResponse: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [.bool(value)]
+        [.bool(value)]
     }
 }

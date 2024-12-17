@@ -4,6 +4,8 @@
 
 import Foundation
 
+// swiftlint:disable function_body_length
+
 extension MessagePackValue {
     /// Joins bytes to form an integer.
     ///
@@ -91,7 +93,10 @@ extension MessagePackValue {
     /// - parameter count: The number of elements to unpack.
     ///
     /// - returns: A dictionary of `count` entries and the not-unpacked remaining data.
-    static func unpackMap(_ data: Subdata, count: Int) throws -> (value: [MessagePackValue: MessagePackValue], remainder: Subdata) {
+    static func unpackMap(
+        _ data: Subdata,
+        count: Int
+    ) throws -> (value: [MessagePackValue: MessagePackValue], remainder: Subdata) {
         var dict = [MessagePackValue: MessagePackValue](minimumCapacity: count)
         var lastKey: MessagePackValue?
 
@@ -123,49 +128,49 @@ extension MessagePackValue {
 
         switch value {
         // positive fixint
-        case 0x00 ... 0x7f:
+        case 0x00 ... 0x7F:
             return (.uint8(UInt8(value)), data)
 
         // fixmap
-        case 0x80 ... 0x8f:
+        case 0x80 ... 0x8F:
             let count = Int(value - 0x80)
             let (dict, remainder) = try unpackMap(data, count: count)
             return (.map(dict), remainder)
 
         // fixarray
-        case 0x90 ... 0x9f:
+        case 0x90 ... 0x9F:
             let count = Int(value - 0x90)
             let (array, remainder) = try unpackArray(data, count: count)
             return (.array(array), remainder)
 
         // fixstr
-        case 0xa0 ... 0xbf:
-            let count = Int(value - 0xa0)
+        case 0xA0 ... 0xBF:
+            let count = Int(value - 0xA0)
             let (string, remainder) = try unpackString(data, count: count)
             return (.string(string), remainder)
 
         // nil
-        case 0xc0:
+        case 0xC0:
             return (.nil, data)
 
         // false
-        case 0xc2:
+        case 0xC2:
             return (.bool(false), data)
 
         // true
-        case 0xc3:
+        case 0xC3:
             return (.bool(true), data)
 
         // bin 8, 16, 32
-        case 0xc4 ... 0xc6:
-            let intCount = 1 << Int(value - 0xc4)
+        case 0xC4 ... 0xC6:
+            let intCount = 1 << Int(value - 0xC4)
             let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
             let (subdata, remainder2) = try unpackData(remainder1, count: Int(dataCount))
             return (.binary(subdata.data), remainder2)
 
         // ext 8, 16, 32
-        case 0xc7 ... 0xc9:
-            let intCount = 1 << Int(value - 0xc7)
+        case 0xC7 ... 0xC9:
+            let intCount = 1 << Int(value - 0xC7)
 
             let (dataCount, remainder1) = try unpackInteger(data, count: intCount)
             guard !remainder1.isEmpty else {
@@ -177,41 +182,41 @@ extension MessagePackValue {
             return (.extended(type, subdata.data), remainder2)
 
         // float 32
-        case 0xca:
+        case 0xCA:
             let (intValue, remainder) = try unpackInteger(data, count: 4)
             let float = Float(bitPattern: UInt32(truncatingIfNeeded: intValue))
             return (.float(float), remainder)
 
         // float 64
-        case 0xcb:
+        case 0xCB:
             let (intValue, remainder) = try unpackInteger(data, count: 8)
             let double = Double(bitPattern: intValue)
             return (.double(double), remainder)
 
         // uint 8
-        case 0xcc:
+        case 0xCC:
             let integer = data[0]
             return (.uint8(integer), data[1 ..< data.count])
-            
+
         // uint 16
-        case 0xcd:
+        case 0xCD:
             let (bytes, remainder) = try unpackInteger(data, count: 2)
             let integer = UInt16(truncatingIfNeeded: bytes)
             return (.uint16(integer), remainder)
-            
+
         // uint 32
-        case 0xce:
+        case 0xCE:
             let (bytes, remainder) = try unpackInteger(data, count: 4)
             let integer = UInt32(truncatingIfNeeded: bytes)
             return (.uint32(integer), remainder)
-            
+
         // uint 64
-        case 0xcf:
+        case 0xCF:
             let (integer, remainder) = try unpackInteger(data, count: 8)
             return (.uint64(integer), remainder)
 
         // int 8
-        case 0xd0:
+        case 0xD0:
             guard !data.isEmpty else {
                 throw MessagePackUnpackError.insufficientData
             }
@@ -220,26 +225,26 @@ extension MessagePackValue {
             return (.int8(byte), data[1 ..< data.count])
 
         // int 16
-        case 0xd1:
+        case 0xD1:
             let (bytes, remainder) = try unpackInteger(data, count: 2)
             let integer = Int16(bitPattern: UInt16(truncatingIfNeeded: bytes))
             return (.int16(integer), remainder)
 
         // int 32
-        case 0xd2:
+        case 0xD2:
             let (bytes, remainder) = try unpackInteger(data, count: 4)
             let integer = Int32(bitPattern: UInt32(truncatingIfNeeded: bytes))
             return (.int32(integer), remainder)
 
         // int 64
-        case 0xd3:
+        case 0xD3:
             let (bytes, remainder) = try unpackInteger(data, count: 8)
             let integer = Int64(bitPattern: bytes)
             return (.int64(integer), remainder)
 
         // fixent 1, 2, 4, 8, 16
-        case 0xd4 ... 0xd8:
-            let count = 1 << Int(value - 0xd4)
+        case 0xD4 ... 0xD8:
+            let count = 1 << Int(value - 0xD4)
 
             guard !data.isEmpty else {
                 throw MessagePackUnpackError.insufficientData
@@ -250,32 +255,32 @@ extension MessagePackValue {
             return (.extended(type, subdata.data), remainder)
 
         // str 8, 16, 32
-        case 0xd9 ... 0xdb:
-            let countSize = 1 << Int(value - 0xd9)
+        case 0xD9 ... 0xDB:
+            let countSize = 1 << Int(value - 0xD9)
             let (count, remainder1) = try unpackInteger(data, count: countSize)
             let (string, remainder2) = try unpackString(remainder1, count: Int(count))
             return (.string(string), remainder2)
 
         // array 16, 32
-        case 0xdc ... 0xdd:
-            let countSize = 1 << Int(value - 0xdb)
+        case 0xDC ... 0xDD:
+            let countSize = 1 << Int(value - 0xDB)
             let (count, remainder1) = try unpackInteger(data, count: countSize)
             let (array, remainder2) = try unpackArray(remainder1, count: Int(count))
             return (.array(array), remainder2)
 
         // map 16, 32
-        case 0xde ... 0xdf:
-            let countSize = 1 << Int(value - 0xdd)
+        case 0xDE ... 0xDF:
+            let countSize = 1 << Int(value - 0xDD)
             let (count, remainder1) = try unpackInteger(data, count: countSize)
             let (dict, remainder2) = try unpackMap(remainder1, count: Int(count))
             return (.map(dict), remainder2)
 
         // negative fixint
-        case 0xe0 ..< 0xff:
+        case 0xE0 ..< 0xFF:
             return (.int8(Int8(Int64(value) - 0x100)), data)
 
         // negative fixint (workaround for rdar://19779978)
-        case 0xff:
+        case 0xFF:
             return (.int8(Int8(Int64(value) - 0x100)), data)
 
         default:

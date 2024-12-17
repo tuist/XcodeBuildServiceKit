@@ -7,7 +7,7 @@ public struct BuildOperationProjectInfo: Decodable {
     public let path: String
     public let isPackage: Bool
     public let isNameUniqueInWorkspace: Bool
-    
+
     public init(name: String, path: String, isPackage: Bool, isNameUniqueInWorkspace: Bool) {
         self.name = name
         self.path = path
@@ -20,7 +20,7 @@ public struct BuildOperationProjectInfo: Decodable {
 
 extension BuildOperationProjectInfo: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             .string(name),
             .string(path),
             .bool(isPackage),

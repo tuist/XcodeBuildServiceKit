@@ -8,7 +8,7 @@ public struct BuildOperationTaskMetrics {
     public let maxRSS: UInt64
     public let wcStartTime: UInt64
     public let wcDuration: UInt64
-    
+
     public init(
         utime: UInt64,
         stime: UInt64,
@@ -29,12 +29,12 @@ public struct BuildOperationTaskMetrics {
 extension BuildOperationTaskMetrics: DecodableRPCPayload {
     public init(args: [MessagePackValue], indexPath: IndexPath) throws {
         guard args.count == 5 else { throw RPCPayloadDecodingError.invalidCount(args.count, indexPath: indexPath) }
-        
-        self.utime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 0))
-        self.stime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 1))
-        self.maxRSS = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 2))
-        self.wcStartTime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 3))
-        self.wcDuration = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 4))
+
+        utime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 0))
+        stime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 1))
+        maxRSS = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 2))
+        wcStartTime = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 3))
+        wcDuration = try args.parseUInt64(indexPath: indexPath + IndexPath(index: 4))
     }
 }
 
@@ -42,7 +42,7 @@ extension BuildOperationTaskMetrics: DecodableRPCPayload {
 
 extension BuildOperationTaskMetrics: EncodableRPCPayload {
     public func encode() -> [MessagePackValue] {
-        return [
+        [
             .uint64(utime),
             .uint64(stime),
             .uint64(maxRSS),

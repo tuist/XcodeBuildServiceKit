@@ -9,7 +9,7 @@ public struct PreviewInfoRequest: Decodable {
     public let targetGUID: String
     public let sourceFile: String // e.g. "/Full/Path/To/Project/Source/File.swift"
     public let thunkVariantSuffix: String // e.g. "__XCPREVIEW_THUNKSUFFIX__"
-    
+
     enum CodingKeys: String, CodingKey {
         case sessionHandle
         case responseChannel

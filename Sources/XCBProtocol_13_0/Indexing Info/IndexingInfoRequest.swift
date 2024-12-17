@@ -9,7 +9,7 @@ public struct IndexingInfoRequest: Decodable {
     public let targetGUID: String
     public let filePath: String?
     public let outputPathOnly: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case sessionHandle
         case responseChannel

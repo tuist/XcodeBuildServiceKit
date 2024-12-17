@@ -8,10 +8,10 @@ import XCBProtocol
 public final class BuildContext<ResponsePayload: XCBProtocol.ResponsePayload> {
     public let session: String
     public let buildNumber: Int64
-    
+
     private let responseChannel: UInt64
     private let sendResponse: (RPCResponse<ResponsePayload>) -> Void
-    
+
     public init(
         sendResponse: @escaping (RPCResponse<ResponsePayload>) -> Void,
         session: String,
@@ -23,10 +23,11 @@ public final class BuildContext<ResponsePayload: XCBProtocol.ResponsePayload> {
         self.responseChannel = responseChannel
         self.sendResponse = sendResponse
     }
-    
+
     public func sendResponseMessage<PayloadConvertible>(_ payloadConvertible: PayloadConvertible) where
         PayloadConvertible: ResponsePayloadConvertible,
-        PayloadConvertible.Payload == ResponsePayload {
+        PayloadConvertible.Payload == ResponsePayload
+    {
         sendResponse(RPCResponse(channel: responseChannel, payload: payloadConvertible.toResponsePayload()))
     }
 }

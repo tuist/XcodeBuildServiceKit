@@ -15,13 +15,13 @@ extension PingResponse: ResponsePayloadConvertible {
 // MARK: - Decoding
 
 extension PingResponse: CustomDecodableRPCPayload {
-    public init(values: [MessagePackValue], indexPath: IndexPath) {}
+    public init(values _: [MessagePackValue], indexPath _: IndexPath) {}
 }
 
 // MARK: - Encoding
 
 extension PingResponse: CustomEncodableRPCPayload {
     public func encode() -> MessagePackValue {
-        return .nil
+        .nil
     }
 }

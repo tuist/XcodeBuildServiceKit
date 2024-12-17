@@ -28,7 +28,7 @@ extension MessagePackValue: ExpressibleByExtendedGraphemeClusterLiteral {
 }
 
 extension MessagePackValue: ExpressibleByNilLiteral {
-    public init(nilLiteral: ()) {
+    public init(nilLiteral _: ()) {
         self = .nil
     }
 }

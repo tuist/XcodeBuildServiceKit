@@ -7,7 +7,7 @@ public struct CreateBuildRequest: Decodable {
     public let responseChannel: UInt64
     public let buildRequest: BuildRequest
     public let onlyCreateBuildDescription: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case sessionHandle
         case responseChannel

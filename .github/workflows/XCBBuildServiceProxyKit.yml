@@ -1,0 +1,51 @@
+name: XCBBuildServiceProxyKit
+
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+
+concurrency:
+  group: XCBBuildServiceProxyKit-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: "Release build on ${{ matrix.os }}"
+    strategy:
+      matrix:
+        os: [macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          experimental: true
+      - name: Run
+        run: mise run build
+
+  test:
+    name: "Test on ${{ matrix.os }}"
+    strategy:
+      matrix:
+        os: [macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          experimental: true
+      - name: Run
+        run: mise run test
+
+  lint:
+    name: Lint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          experimental: true
+      - name: Run
+        run: mise run lint

@@ -38,6 +38,43 @@ let package = Package(
             ]
         ),
         .target(
+            name: "XCBProtocol_11_3",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .target(
+            name: "XCBProtocol_11_4",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .target(
+            name: "XCBProtocol_12_0",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .target(
+            name: "XCBProtocol_12_5",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio"),
+                "XCBProtocol"
+            ]
+        ),
+        .target(
+            name: "XCBProtocol_13_0",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .target(
+            name: "XCBProtocol_13_3",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio")
+            ]
+        ),
+        .target(
             name: "MessagePack",
             dependencies: [
             ]

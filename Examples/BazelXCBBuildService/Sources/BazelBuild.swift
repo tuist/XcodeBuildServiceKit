@@ -1,12 +1,12 @@
 import Foundation
-import XCBBuildServiceProxyKit
+import XcodeBuildServiceKit
 import XCBProtocol
 
 // swiftformat:disable braces
 
 final class BazelBuild {
     static let standardArchitectures = ["arm64"]
-    
+
     struct Target {
         let name: String
         let xcodeGUID: String
@@ -15,7 +15,7 @@ final class BazelBuild {
         let buildConfigurations: [String: [String: BuildSetting]]
         var parameters: BuildParameters?
     }
-    
+
     // Value semantics, but class because of massive reuse with `Target`.
     final class Project {
         let name: String
@@ -23,7 +23,7 @@ final class BazelBuild {
         let projectDirectory: String
         let isPackage: Bool
         let buildConfigurations: [String: [String: BuildSetting]]
-        
+
         init(
             name: String,
             path: String,
@@ -38,7 +38,7 @@ final class BazelBuild {
             self.buildConfigurations = buildConfigurations
         }
     }
-    
+
     private let buildContext: BuildContext<BazelXCBBuildServiceResponsePayload>
     private let buildProcess: BazelBuildProcess
 
@@ -46,18 +46,18 @@ final class BazelBuild {
     private let xcodeBuildVersion: String
     private let developerDir: String
     private let buildRequest: BuildRequest
-    
+
     private var buildProgress: Double = -1.0
     private var initialActionCount: Int = 0
-    
+
     private let bazelTargets: [(target: Target, label: String, xcodeLabel: String)]
     private let nonBazelTargets: [Target]
-    
+
     private static let diagnosticsRegex = try! NSRegularExpression(
         pattern: #"^(?:(.*?):(\d+):(\d+):\s+)?(error|warning|note):\s*(.*)$"#,
         options: [.caseInsensitive]
     )
-    
+
     /// This regex is used to minimally remove the timestamp at the start of our messages.
     /// After that we try to parse out the execution progress
     /// (see https://github.com/bazelbuild/bazel/blob/9bea69aee3acf18b780b397c8c441ac5715d03ae/src/main/java/com/google/devtools/build/lib/buildtool/ExecutionProgressReceiver.java#L150-L157 ).
@@ -65,7 +65,7 @@ final class BazelBuild {
     private static let progressRegex = try! NSRegularExpression(
         pattern: #"^(?:\(\d{1,2}:\d{1,2}:\d{1,2}\) )?(?:\[(\d{1,3}(,\d{3})*) \/ (\d{1,3}(,\d{3})*)\] )?(?:(?:INFO|ERROR|WARNING): )?(.*?)(?: \.\.\. \(.*\))?$"#
     )
-    
+
     init(
         buildContext: BuildContext<BazelXCBBuildServiceResponsePayload>,
         environment: [String: String],
@@ -77,7 +77,7 @@ final class BazelBuild {
         guard !targets.isEmpty else {
             throw BazelBuildError.noTargets
         }
-        
+
         let targetsList = targets.map(\.name).joined(separator: ", ")
         let targetsWording = targets.count == 1 ? "target" : "targets"
         logger.info("Creating a Bazel build for \(targetsWording): \(targetsList)")
@@ -86,7 +86,7 @@ final class BazelBuild {
         self.xcodeBuildVersion = xcodeBuildVersion
         self.developerDir = developerDir
         self.buildRequest = buildRequest
-        
+
         self.buildContext = buildContext
 
         switch buildRequest.buildCommand {
@@ -105,12 +105,12 @@ final class BazelBuild {
             )
         }
     }
-    
+
     /// - Returns: `true` if at least one of the desired targets should be built with Bazel.
     static func shouldBuild(targets: [Target], buildRequest: BuildRequest) -> Bool {
         return targets.contains { $0.shouldBuildWithBazel(configuration: buildRequest.parameters.configuration) }
     }
-    
+
     /// - Returns: `true` if the target shouldn't be build for the `buildRequest`.
     ///   e.g. test targets are set in Xcode 11.3 for SwiftUI previews, even though we don't need to build them.
     static func shouldSkipTarget(_ target: Target, buildRequest: BuildRequest) -> Bool {
@@ -123,7 +123,7 @@ final class BazelBuild {
                 "com.apple.product-type.bundle.ui-testing",
             ].contains(target.productTypeIdentifier)
     }
-    
+
     static func previewInfo(
         _ request: PreviewInfoRequest,
         targets: [String: Target],
@@ -131,13 +131,13 @@ final class BazelBuild {
         xcodeBuildVersion: String
     ) throws -> PreviewInfoResponse {
         let targetGUID = request.targetGUID
-        
+
         guard let target = targets[targetGUID] else {
             throw BazelBuildError.targetNotFound(guid: targetGUID)
         }
 
         let buildRequest = request.buildRequest
-        
+
         guard shouldBuild(targets: [target], buildRequest: buildRequest) else {
             throw BazelBuildError.dontBuildWithBazel
         }
@@ -158,23 +158,23 @@ final class BazelBuild {
             sdkRoot: sdkRoot,
             target: target
         )
-        
+
         let configuration = parameters.configuration
-        
+
         guard case let .string(rawLabel) = target.buildSetting(Target.bazelLabelBuildSetting, for: configuration) else {
             throw BazelBuildError.bazelLabelNotSet(targetName: target.name)
         }
-        
+
         // Our modules use the wrapper suffix, which we need to strip off
         let label = rawLabel.deletingSuffix(".${SWIFT_PLATFORM_TARGET_PREFIX}_wrapper")
-        
+
         // Convert the label into a directory
         let directory = label.deletingPrefix("//").substringBefore(":")
-        
+
         let package = String(directory.split(separator: "/").last!)
         let sourceIdentifier = String(request.sourceFile.split(separator: "/").last!).deletingSuffix(".swift")
         let thunkVariantSuffix = request.thunkVariantSuffix
-        
+
         let workingDirectory = target.project.projectDirectory
         let flavor = ["Release", "Profile"].contains(configuration) ? "opt" : "dbg"
 
@@ -186,13 +186,13 @@ final class BazelBuild {
         guard let minOSVersion = environment[activeRunDestination.platform.deploymentTargetClangEnvName] else {
             throw BazelBuildError.deploymentTargetNotSet(targetName: target.name)
         }
-        
+
         #if EXPERIMENTAL_XCODE
             let shouldBuildForExperimentXcode = "true"
         #else
             let shouldBuildForExperimentXcode = "false"
         #endif
-        
+
         return PreviewInfoResponse(
             targetGUID: targetGUID,
             infos: [
@@ -226,7 +226,7 @@ final class BazelBuild {
             ]
         )
     }
-    
+
     private static func generateEnvironment(
         baseEnvironment: [String: String],
         buildRequest: BuildRequest,
@@ -240,10 +240,10 @@ final class BazelBuild {
         let project = target.project
         let parameters = target.parameters ?? buildRequest.parameters
         let configuration = parameters.configuration
-        
+
         let projectBuildSettings = project.buildConfigurations[configuration] ?? [:]
         let targetBuildSettings = target.buildConfigurations[configuration] ?? [:]
-        
+
         let productName: String
         if case let .string(theProductName) = targetBuildSettings["PRODUCT_NAME"] {
             productName = theProductName
@@ -253,13 +253,13 @@ final class BazelBuild {
         }
 
         let activeRunDestination = parameters.activeRunDestination
-        
+
         let effectiveConfiguration = "\(configuration)\(activeRunDestination.platform.effectivePlatform ?? "")"
         let symRoot = parameters.overrides.synthesized["SYMROOT"] ??
             parameters.arenaInfo.buildProductsPath
         let builtProductsDir = "\(symRoot)/\(effectiveConfiguration)"
         let configurationTempDir = "/\(project.name).build/\(effectiveConfiguration)"
-        
+
         let targetBuildDir: String
         if case let .string(testHost) = targetBuildSettings["TEST_HOST"] {
             // TODO: Parse build settings better
@@ -274,17 +274,17 @@ final class BazelBuild {
         } else {
             targetBuildDir = builtProductsDir
         }
-        
+
         // TODO: Handle custom toolchains
         // (look in "/Library/Developer/Toolchains/" for a toolchain that matches `buildRequest.toolchainOverride`)
         let xcodeToolchainDir = "\(developerDir)/Toolchains/XcodeDefault.xctoolchain"
         let toolchainDir = xcodeToolchainDir
         let toolchains = ["com.apple.dt.toolchain.XcodeDefault"]
-        
+
         let validArchitectures = activeRunDestination.supportedArchitectures
             .filter { standardArchitectures.contains($0) }
         let architecture = validArchitectures.first ?? activeRunDestination.targetArchitecture
-        
+
         let paths = [
             "\(toolchainDir)/usr/bin",
             "\(toolchainDir)/usr/local/bin",
@@ -321,9 +321,9 @@ final class BazelBuild {
             "TOOLCHAIN_DIR": toolchainDir,
             "TOOLCHAINS": toolchains.joined(separator: " "),
         ]
-        
+
         defaultBuildSettings["LLVM_TARGET_TRIPLE_SUFFIX"] = activeRunDestination.platform.llvmTargetTripleSuffix
-        
+
         if let wrapperExtension = target.productTypeIdentifier.flatMap(wrapperExtension) {
             let fullProductName = "\(productName).\(wrapperExtension)"
             defaultBuildSettings["WRAPPER_EXTENSION"] = wrapperExtension
@@ -331,7 +331,7 @@ final class BazelBuild {
             defaultBuildSettings["WRAPPER_NAME"] = fullProductName
             defaultBuildSettings["FULL_PRODUCT_NAME"] = fullProductName
         }
-        
+
         var environment = mergeBuildSettings([
             baseEnvironment,
             defaultBuildSettings,
@@ -339,14 +339,14 @@ final class BazelBuild {
             projectBuildSettings.asStrings(),
             targetBuildSettings.asStrings(),
         ])
-        
+
         environment["BAZEL_XCODE_PLATFORM_DEVELOPER_DIR"] = platformDeveloperDir
         environment["XCODE_PRODUCT_BUILD_VERSION"] = xcodeBuildVersion
 
         if buildRequest.continueBuildingAfterErrors {
             environment["NBS_CONTINUE_BUILDING_AFTER_ERRORS"] = "YES"
         }
-        
+
         return environment
     }
 
@@ -358,17 +358,17 @@ final class BazelBuild {
              "com.apple.product-type.application.watchapp2",
              "com.apple.product-type.application.watchapp2-container":
             return "app"
-            
+
         case "com.apple.product-type.framework":
             return "framework"
-            
+
         case "com.apple.product-type.bundle":
             return "bundle"
-            
+
         case "com.apple.product-type.bundle.unit-test",
              "com.apple.product-type.bundle.ui-testing":
             return "xctest"
-            
+
         case "com.apple.product-type.app-extension",
              "com.apple.product-type.app-extension.messages",
              "com.apple.product-type.app-extension.messages-sticker-pack",
@@ -376,21 +376,21 @@ final class BazelBuild {
              "com.apple.product-type.watchkit-extension",
              "com.apple.product-type.watchkit2-extension":
             return "appex"
-            
+
         case "com.apple.product-type.xpc-service":
             return "xpc"
-            
+
         default:
             return nil
         }
     }
-    
+
     private static func mergeBuildSettings(_ buildSettings: [[String: String]]) -> [String: String] {
         return buildSettings.reduce(into: [:]) { buildSettings, additionalBuildSettings in
             buildSettings.merge(additionalBuildSettings) { _, new in new }
         }
     }
-    
+
     func start(startedHandler: @escaping () -> Void) throws {
         guard nonBazelTargets.isEmpty else {
             startedHandler()
@@ -408,14 +408,14 @@ final class BazelBuild {
         let workingDirectory = bazelTargets.last?.target.project.projectDirectory ?? ""
 
         var uniquedActions = false
-        
+
         try buildProcess.start(
             startedHandler: { [buildContext, baseEnvironment, xcodeBuildVersion, developerDir, buildRequest, bazelTargets] uniqueTargetsHandler, startProcessHandler in
                 startedHandler()
 
                 let actualLabels = bazelTargets.map(\.label)
                 let actualTargetPatterns = actualLabels.joined(separator: " ")
-                
+
                 buildContext.planningStarted()
                 buildContext.progressUpdate("Building with Bazel", percentComplete: -1.0, showInLog: true)
                 if !bazelTargets.isEmpty {
@@ -425,7 +425,7 @@ final class BazelBuild {
                         showInLog: true
                     )
                 }
-                
+
                 let finishStartup = { (buildLabelsResult: Result<[String], Error>) in
                     let uniqueActualLabels: [String]
                     switch buildLabelsResult {
@@ -460,7 +460,7 @@ final class BazelBuild {
                         )
                     }
                     buildContext.planningEnded()
-                    
+
                     buildContext.buildStarted()
 
                     let parameters = installTarget?.parameters ?? buildRequest.parameters
@@ -485,7 +485,7 @@ final class BazelBuild {
                             )
                         } ?? baseEnvironment
                     )
-                    
+
                     if let installTarget = installTarget {
                         buildContext.targetStarted(
                             id: 0,
@@ -531,11 +531,11 @@ final class BazelBuild {
             },
             outputHandler: { [buildContext] output in
                 buildContext.consoleOutput(output, taskID: 1)
-                
+
                 if let stringOutput = String(data: output, encoding: .utf8) {
                     stringOutput.split(separator: "\n").forEach { message in
                         let message = String(message)
-                        
+
                         let kind: BuildOperationDiagnosticKind
                         let location: BuildOperationDiagnosticLocation
                         let finalMessage: String
@@ -554,9 +554,9 @@ final class BazelBuild {
                             case "warning": kind = .warning
                             default: kind = .info
                             }
-                            
+
                             finalMessage = String(message[finalMessageRange]).capitalizingFirstLetter()
-                            
+
                             if
                                 let fileNameRange = Range(match.range(at: 1), in: message),
                                 let lineRange = Range(match.range(at: 2), in: message),
@@ -576,7 +576,7 @@ final class BazelBuild {
                             finalMessage = message
                             location = .alternativeMessage("")
                         }
-                        
+
                         buildContext.diagnostic(
                             finalMessage,
                             kind: kind,
@@ -590,9 +590,9 @@ final class BazelBuild {
                 var progressMessage: String?
                 event.progress.stderr.split(separator: "\n").forEach { message in
                     guard !message.isEmpty else { return }
-                    
+
                     let message = String(message)
-                    
+
                     if
                         let match = Self.progressRegex.firstMatch(
                             in: message,
@@ -605,12 +605,12 @@ final class BazelBuild {
                         let totalActionsRange = Range(match.range(at: 3), in: message)
                     {
                         progressMessage = String(message[finalMessageRange])
-                        
+
                         let completedActionsString = message[completedActionsRange]
                             .replacingOccurrences(of: ",", with: "")
                         let totalActionsString = message[totalActionsRange]
                             .replacingOccurrences(of: ",", with: "")
-                        
+
                         if
                             let completedActions = Int(completedActionsString),
                             let totalActions = Int(totalActionsString)
@@ -618,19 +618,19 @@ final class BazelBuild {
                             if self.initialActionCount == 0, completedActions > 0, completedActions != totalActions {
                                 self.initialActionCount = completedActions
                             }
-                            
+
                             self.buildProgress = 100 * Double(completedActions - self.initialActionCount) / Double(totalActions - self.initialActionCount)
                         } else {
                             logger.error("Failed to parse progress out of BEP message: \(message)")
                         }
                     }
                 }
-                
+
                 if event.lastMessage {
                     progressMessage = progressMessage ?? "Compilation complete"
                     self.buildProgress = 100
                 }
-                
+
                 // Take the last message in the case of multiple lines, as well as the most recent `buildProgress`
                 if let message = progressMessage {
                     buildContext.progressUpdate(message, percentComplete: self.buildProgress)
@@ -638,7 +638,7 @@ final class BazelBuild {
             },
             terminationHandler: { [buildContext, bazelTargets] exitCode, cancelled in
                 logger.info("\(cancelled ? "Cancelled Bazel" : "Bazel") build exited with status code: \(exitCode)")
-                
+
                 let succeeded = cancelled || exitCode == 0
 
                 if !bazelTargets.isEmpty {
@@ -647,12 +647,12 @@ final class BazelBuild {
                         buildContext.targetEnded(id: 0)
                     }
                 }
-                
+
                 buildContext.buildEnded(cancelled: cancelled)
             }
         )
     }
-    
+
     func cancel() {
         buildProcess.stop()
     }
@@ -675,13 +675,13 @@ private extension BuildContext where ResponsePayload == BazelXCBBuildServiceResp
     func planningEnded() {
         sendResponseMessage(PlanningOperationDidFinish(sessionHandle: session, guid: ""))
     }
-    
+
     func buildStarted() {
         sendResponseMessage(BuildOperationPreparationCompleted())
         sendResponseMessage(BuildOperationStarted(buildNumber: buildNumber))
         sendResponseMessage(BuildOperationReportPathMap())
     }
-    
+
     func progressUpdate(_ message: String, percentComplete: Double, showInLog: Bool = false) {
         sendResponseMessage(
             BuildOperationProgressUpdated(
@@ -692,23 +692,23 @@ private extension BuildContext where ResponsePayload == BazelXCBBuildServiceResp
             )
         )
     }
-    
+
     func buildEnded(cancelled: Bool) {
         sendResponseMessage(BuildOperationEnded(buildNumber: buildNumber, status: cancelled ? .cancelled : .succeeded))
     }
-    
+
     func targetUpToDate(guid: String) {
         sendResponseMessage(BuildOperationTargetUpToDate(guid: guid))
     }
-    
+
     func targetStarted(id: Int64, guid: String, targetInfo: BuildOperationTargetInfo) {
         sendResponseMessage(BuildOperationTargetStarted(targetID: id, guid: guid, targetInfo: targetInfo))
     }
-    
+
     func targetEnded(id: Int64) {
         sendResponseMessage(BuildOperationTargetEnded(targetID: id))
     }
-    
+
     func taskStarted(id: Int64, targetID: Int64, taskDetails: BuildOperationTaskStarted.TaskDetails) {
         sendResponseMessage(
             BuildOperationTaskStarted(
@@ -719,7 +719,7 @@ private extension BuildContext where ResponsePayload == BazelXCBBuildServiceResp
             )
         )
     }
-    
+
     func consoleOutput(_ data: Data, taskID: Int64) {
         sendResponseMessage(
             BuildOperationConsoleOutputEmitted(
@@ -728,7 +728,7 @@ private extension BuildContext where ResponsePayload == BazelXCBBuildServiceResp
             )
         )
     }
-    
+
     func diagnostic(
         _ message: String,
         kind: BuildOperationDiagnosticKind,
@@ -747,7 +747,7 @@ private extension BuildContext where ResponsePayload == BazelXCBBuildServiceResp
             )
         )
     }
-    
+
     func taskEnded(id: Int64, succeeded: Bool) {
         sendResponseMessage(
             BuildOperationTaskEnded(
@@ -784,19 +784,19 @@ private extension BazelBuild.Target {
     static let shouldBuildWithBazelBuildSetting = "USE_BAZELXCBBUILDSERVICE"
     static let bazelLabelBuildSetting = "BAZEL_LABEL"
     static let bazelXcodeLabelBuildSetting = "BAZEL_XCODE_LABEL"
-    
+
     func buildSetting(_ name: String, for configuration: String) -> BuildSetting? {
         guard let targetBuildSettings = buildConfigurations[configuration] else {
             return nil
         }
-        
+
         if let targetSetting = targetBuildSettings[name] {
             return targetSetting
         }
-        
+
         return project.buildConfigurations[configuration]?[name]
     }
-    
+
     func shouldBuildWithBazel(configuration: String) -> Bool {
         guard case let .string(setting) = buildSetting(Self.shouldBuildWithBazelBuildSetting, for: configuration) else {
             return false
@@ -908,7 +908,7 @@ private extension BuildPlatform {
         switch self {
         case .iphonesimulator, .watchsimulator, .appletvsimulator:
             return "-simulator"
-            
+
         default:
             return nil
         }
@@ -934,7 +934,7 @@ private extension BuildPlatform {
 
 private extension SDKVariant {
     private static let regex = try! NSRegularExpression(pattern: #"^(\D+)(\d+\.\d+)$"#)
-    
+
     // e.g. "iphonesimulator13.2" -> "iPhoneSimulator13.2.sdk"
     var directoryName: String {
         // TODO: Figure this out better
@@ -961,17 +961,17 @@ private extension String {
     func capitalizingFirstLetter() -> String {
         return prefix(1).capitalized + dropFirst()
     }
-    
+
     func deletingPrefix(_ prefix: String) -> String {
         guard hasPrefix(prefix) else { return self }
         return String(dropFirst(prefix.count))
     }
-    
+
     func deletingSuffix(_ suffix: String) -> String {
         guard hasSuffix(suffix) else { return self }
         return String(dropLast(suffix.count))
     }
-    
+
     func substringBefore(_ marker: String.Element) -> String {
         guard let index = firstIndex(of: marker) else { return self }
         return String(self[..<index])

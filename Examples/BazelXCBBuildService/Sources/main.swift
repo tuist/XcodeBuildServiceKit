@@ -1,18 +1,18 @@
 import Foundation
 import Logging
 import NIO
-import XCBBuildServiceProxyKit
+import XcodeBuildServiceKit
 
 LoggingSystem.bootstrap { label in
     var handler = StreamLogHandler.standardError(label: label)
-    
+
     let logLevel: Logger.Level
     switch ProcessInfo.processInfo.environment["BAZELXCBBUILDSERVICE_LOGLEVEL"]?.lowercased() {
     case "debug": logLevel = .debug
     case "trace": logLevel = .trace
     default: logLevel = .info
     }
-    
+
     handler.logLevel = logLevel
     return handler
 }

@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "XCBBuildServiceProxyKit",
+    name: "XcodeBuildServiceKit",
     platforms: [.macOS("12.0")],
     products: [
         .library(
-            name: "XCBBuildServiceProxyKit",
+            name: "XcodeBuildServiceKit",
             type: .static,
-            targets: ["XCBBuildServiceProxyKit"]
+            targets: ["XcodeBuildServiceKit"]
         ),
         .library(
             name: "MessagePack",
@@ -24,7 +24,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "XCBBuildServiceProxyKit",
+            name: "XcodeBuildServiceKit",
             dependencies: [
                 "MessagePack",
                 "XCBProtocol",

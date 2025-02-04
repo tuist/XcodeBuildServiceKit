@@ -1,7 +1,7 @@
 import Foundation
 import Logging
 import NIO
-import XCBBuildServiceProxyKit
+import XcodeBuildServiceKit
 import XCBProtocol
 
 @_exported import XCBProtocol_12_0
@@ -10,16 +10,16 @@ typealias BazelXCBBuildServiceResponsePayload = XCBProtocol_12_0.ResponsePayload
 
 final class RequestHandler: HybridXCBBuildServiceRequestHandler {
     typealias Context = HybridXCBBuildServiceRequestHandlerContext<BazelXCBBuildServiceRequestPayload, BazelXCBBuildServiceResponsePayload>
-    
+
     private typealias SessionHandle = String
-    
+
     private var sessionAppPaths: [SessionHandle: String] = [:]
     private var sessionXcodeBuildVersionFutures: [SessionHandle: (Any, EventLoopFuture<String>)] = [:]
     private var sessionPIFCachePaths: [SessionHandle: String] = [:]
     private var sessionWorkplaceSignatures: [SessionHandle: String] = [:]
     private var sessionBazelTargetsFutures: [SessionHandle: (environment: [String: String], EventLoopFuture<[String: BazelBuild.Target]?>)] = [:]
     private var sessionBazelBuilds: [SessionHandle: BazelBuild] = [:]
-    
+
     // We use negative numbers to ensure no duplication with XCBBuildService (though it seems that doesn't matter)
     private var lastBazelBuildNumber: Int64 = 0
 
@@ -37,7 +37,7 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                 context.forwardRequest()
             }
         }
-        
+
         func handleBazelTargets(
             session: String,
             handler: @escaping (
@@ -50,17 +50,17 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                 logger.error("Bazel target mapping future not found for session “\(session)”")
                 return
             }
-            
+
             guard let (_, xcodeBuildVersionFuture) = sessionXcodeBuildVersionFutures[session] else {
                 logger.error("Xcode Build Version future not found for session “\(session)”")
                 return
             }
-            
+
             let future = bazelTargetsFuture.and(xcodeBuildVersionFuture)
-            
+
             // We are handling this ourselves
             shouldForwardRequest = false
-            
+
             future.whenFailure { error in
                 // If we have a failure it means we should build with bazel, but we can't
                 // We need to report an error back
@@ -76,27 +76,27 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                     context.forwardRequest()
                     return
                 }
-                
+
                 handler(environment, bazelTargets, xcodeBuildVersion)
             }
         }
-        
+
         switch request.payload {
         case let .createSession(message):
             // We need to read the response to the request
             shouldForwardRequest = false
-            
+
             context.sendRequest(request).whenSuccess { response in
                 // Always send response back to Xcode
                 defer {
                     context.sendResponse(response)
                 }
-                
+
                 guard case let .sessionCreated(payload) = response.payload else {
                     logger.error("Expected SESSION_CREATED RPCResponse.Payload to CREATE_SESSION, instead got: \(response)")
                     return
                 }
-                
+
                 let session = payload.sessionHandle
 
                 // Store the Xcode app path for later use in `CreateBuildRequest`
@@ -108,25 +108,25 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                 let query = QueryXcodeVersion(appPath: message.appPath)
                 self.sessionXcodeBuildVersionFutures[session] = (query, query.start(eventLoop: context.eventLoop))
             }
-            
+
         case let .transferSessionPIFRequest(message):
             // Store `workspaceSignature` for later parsing in `CreateBuildRequest`
             sessionWorkplaceSignatures[message.sessionHandle] = message.workspaceSignature
-            
+
         case let .setSessionUserInfo(message):
             // At this point the PIF cache will be populated soon, so generate the Bazel target mapping
             let session = message.sessionHandle
-            
+
             sessionBazelTargetsFutures[session] = nil
-            
+
             if let future = generateSessionBazelTargets(context: context, session: session) {
                 guard let appPath = sessionAppPaths[session] else {
                     logger.error("Xcode app path not found for session “\(session)”")
                     return
                 }
-                
+
                 let developerDir = "\(appPath)/Contents/Developer"
-                
+
                 let environment = [
                     "DEVELOPER_APPLICATIONS_DIR": "\(developerDir)/Applications",
                     "DEVELOPER_BIN_DIR": "\(developerDir)/usr/bin",
@@ -142,24 +142,24 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                     "USER": message.user,
                 ]
                 let baseEnvironment = message.buildSystemEnvironment.merging(environment) { _, new in new }
-                
+
                 sessionBazelTargetsFutures[session] = (baseEnvironment, future)
             }
-            
+
         case let .createBuildRequest(message):
             let session = message.sessionHandle
-            
+
             // Reset in case we decide not to build
             sessionBazelBuilds[session]?.cancel()
             sessionBazelBuilds[session] = nil
-            
+
             handleBazelTargets(session: session) { baseEnvironment, bazelTargets, xcodeBuildVersion in
                 logger.trace("Parsed targets for BazelXCBBuildService: \(bazelTargets)")
-                
+
                 var desiredTargets: [BazelBuild.Target] = []
                 for target in message.buildRequest.configuredTargets {
                     let guid = target.guid
-                    
+
                     guard var bazelTarget = bazelTargets[guid] else {
                         context.sendErrorResponse(
                             "[\(session)] Parsed target not found for GUID “\(guid)”",
@@ -167,34 +167,34 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                         )
                         return
                     }
-                    
+
                     // TODO: Do this check after uniquing targets, to allow excluding of "Testing" modules as well
                     guard !BazelBuild.shouldSkipTarget(bazelTarget, buildRequest: message.buildRequest) else {
                         logger.info("Skipping target for Bazel build: \(bazelTarget.name)")
                         continue
                     }
-                    
+
                     bazelTarget.parameters = target.parameters
-                    
+
                     desiredTargets.append(bazelTarget)
                 }
-                
+
                 guard BazelBuild.shouldBuild(targets: desiredTargets, buildRequest: message.buildRequest) else {
                     // There were no bazel based targets, so we will build normally
                     context.forwardRequest()
                     return
                 }
-                
+
                 self.lastBazelBuildNumber -= 1
                 let buildNumber = self.lastBazelBuildNumber
-                
+
                 let buildContext = BuildContext(
                     sendResponse: context.sendResponse,
                     session: session,
                     buildNumber: buildNumber,
                     responseChannel: message.responseChannel
                 )
-                
+
                 do {
                     let build = try BazelBuild(
                         buildContext: buildContext,
@@ -204,24 +204,24 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                         buildRequest: message.buildRequest,
                         targets: desiredTargets
                     )
-                    
+
                     self.sessionBazelBuilds[session] = build
                     context.sendResponseMessage(BuildCreated(buildNumber: buildNumber), channel: request.channel)
                 } catch {
                     context.sendErrorResponse(error, session: session, request: request)
                 }
             }
-            
+
         case let .buildStartRequest(message):
             let session = message.sessionHandle
-            
+
             guard let build = sessionBazelBuilds[session] else {
                 return
             }
-            
+
             // We are handling this ourselves
             shouldForwardRequest = false
-            
+
             do {
                 try build.start {
                     context.sendResponseMessage(BoolResponse(true), channel: request.channel)
@@ -229,22 +229,22 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
             } catch {
                 context.sendErrorResponse(error, session: session, request: request)
             }
-            
+
         case let .buildCancelRequest(message):
             let session = message.sessionHandle
-        
+
             guard let build = sessionBazelBuilds[session] else {
                 return
             }
-            
+
             // We are handling this ourselves
             shouldForwardRequest = false
-            
+
             build.cancel()
-            
+
         case let .previewInfoRequest(message):
             let session = message.sessionHandle
-            
+
             handleBazelTargets(session: session) { baseEnvironment, targets, xcodeBuildVersion in
                 do {
                     let response = try BazelBuild.previewInfo(
@@ -253,9 +253,9 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                         baseEnvironment: baseEnvironment,
                         xcodeBuildVersion: xcodeBuildVersion
                     )
-                    
+
                     context.sendResponseMessage(PingResponse(), channel: request.channel)
-                    
+
                     context.sendResponseMessage(response, channel: message.responseChannel)
                 } catch BazelBuildError.dontBuildWithBazel {
                     // There were no bazel based targets, so we will build normally
@@ -265,7 +265,7 @@ final class RequestHandler: HybridXCBBuildServiceRequestHandler {
                     context.sendErrorResponse(error, session: session, request: request)
                 }
             }
-            
+
         default:
             // By default just forward the request
             break
@@ -311,7 +311,7 @@ extension RequestHandler {
                 }
         }
     }
-    
+
     /// - Returns: parsed projects or an error, if we should build with Bazel, or `nil` if we shouldn't.
     private func generateSessionBazelTargets(
         context: Context,
@@ -321,29 +321,29 @@ extension RequestHandler {
             logger.error("PIF cache path not found for session “\(session)”")
             return nil
         }
-        
+
         guard let workspaceSignature = sessionWorkplaceSignatures[session] else {
             logger.error("Workspace signature not found for session “\(session)”")
             return nil
         }
-        
+
         let path = "\(pifCachePath)/workspace/\(workspaceSignature)-json"
         let workspacePIFFuture = decodeJSON(
             WorkspacePIF.self,
             context: context,
             filePath: path
         )
-        
+
         workspacePIFFuture.whenFailure { error in
             logger.error("Failed to decode workspace PIF “\(path)”: \(error)")
         }
-        
+
         return shouldBuildWithBazel(
             context: context,
             workspacePIFFuture: workspacePIFFuture
         ).flatMap { shouldBuildWithBazel in
             guard shouldBuildWithBazel else { return context.eventLoop.makeSucceededFuture(nil) }
-            
+
             return workspacePIFFuture.map { pif in
                 pif.projects.map { self.processPIFProject(cachePath: pifCachePath, signature: $0, context: context) }
             }.flatMap { futures in
@@ -355,7 +355,7 @@ extension RequestHandler {
             }.map { .some($0) }
         }
     }
-    
+
     private func processPIFProject(
         cachePath: String,
         signature: String,
@@ -370,7 +370,7 @@ extension RequestHandler {
                 isPackage: pif.isPackage,
                 buildConfigurations: pif.buildConfigurations.reduce(into: [:]) { $0[$1.name] = $1.buildSettings }
             )
-            
+
             return EventLoopFuture.whenAllSucceed(
                 pif.targets.map {
                     self.processPIFTarget(cachePath: cachePath, signature: $0, project: project, context: context)
@@ -379,7 +379,7 @@ extension RequestHandler {
             )
         }
     }
-    
+
     private func processPIFTarget(
         cachePath: String,
         signature: String,

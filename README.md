@@ -1,25 +1,17 @@
-# XCBBuildServiceProxyKit
+# XcodeBuildServiceKit
 
-XCBBuildServiceProxyKit is a framework that enables you to write a proxy for
-Xcode's XCBBuildService, which enables you to extend or replace Xcode's build
-system.
+XcodeBuildServiceKit is a fork of [XCBuildServiceProxyKit](https://github.com/MobileNativeFoundation/XCBBuildServiceProxyKit) to build a custom `XCBBuildService`.
 
-## Usage
+## Development
 
-Check out the [Examples](Examples/).
+### Set up
 
-## Future Improvements
-
-- [ ] Add tests
-- [ ] Use `Codable` for XCBProtocol parsing
-- [ ] Use [Swift Service Lifecycle](https://github.com/swift-server/swift-service-lifecycle)
-
-## Updating to Support New Xcode Versions
-
-Check out [our guide](Docs/UPDATING.md).
+1. Clone the repository: `git clone https://github.com/tuist/XcodeBuildServiceKit`.
+2. Open `Package.swift` in Xcode.
 
 ## Recognition
 
+- [MobileNativeFoundation/XCBBuildServiceProxyKit](https://github.com/MobileNativeFoundation/XCBBuildServiceProxyKit)
 - [jerrymarino/xcbuildkit](https://github.com/jerrymarino/xcbuildkit) for
   initial inspiration
 - [a2/MessagePack.swift](https://github.com/a2/MessagePack.swift) for starting

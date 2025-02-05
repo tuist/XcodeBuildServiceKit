@@ -28,11 +28,10 @@ public final class XCBBuildService {
     
     func startIfNeeded(xcodePath: String) {
         let defaultProcessPath = servicePath(with: xcodePath)
-        let originalProcessPath = defaultProcessPath + ".original"
         
         let processPath: String
-        if FileManager.default.fileExists(atPath: originalProcessPath) {
-            processPath = originalProcessPath
+        if FileManager.default.fileExists(atPath: defaultProcessPath) {
+            processPath = defaultProcessPath
         } else {
             guard defaultProcessPath != CommandLine.arguments[0] else {
                 fatalError("HybridXCBBuildService installation requires XCBBuildService to be at \(defaultProcessPath)")

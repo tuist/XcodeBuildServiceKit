@@ -15,7 +15,7 @@ public final class XCBBuildService {
     
     private let process: Process
     
-    let channel: Channel
+    public let channel: Channel
     
     init(process: Process, channel: Channel) {
         self.process = process

@@ -10,7 +10,7 @@ import XCBProtocol
 /// Encapsulates a child XCBBuildService process.
 ///
 /// Communication takes place over the Swift NIO `channel`.
-final class XCBBuildService {
+public final class XCBBuildService {
     private static let serviceRelativePath = "/Contents/SharedFrameworks/XCBuild.framework/PlugIns/XCBBuildService.bundle/Contents/MacOS/XCBBuildService"
     
     private let process: Process
@@ -59,13 +59,13 @@ final class XCBBuildService {
     }
 }
 
-final class XCBBuildServiceBootstrap<RequestPayload, ResponsePayload> where
+public final class XCBBuildServiceBootstrap<RequestPayload, ResponsePayload> where
     RequestPayload: XCBProtocol.RequestPayload,
     ResponsePayload: XCBProtocol.ResponsePayload
 {
     private let bootstrap: NIOPipeBootstrap
     
-    init(group: EventLoopGroup) {
+    public init(group: EventLoopGroup) {
         self.bootstrap = NIOPipeBootstrap(group: group)
             .channelInitializer { channel in
                 let framingHandler = RPCPacketCodec(label: "XCBBuildService")
@@ -83,7 +83,7 @@ final class XCBBuildServiceBootstrap<RequestPayload, ResponsePayload> where
             }
     }
     
-    func create() -> EventLoopFuture<XCBBuildService> {
+    public func create() -> EventLoopFuture<XCBBuildService> {
         let stdin = Pipe()
         let stdout = Pipe()
         let stderr = Pipe()
